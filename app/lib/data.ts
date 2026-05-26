@@ -146,6 +146,10 @@ export async function fetchInvoicesPages(query: string) {
 }
 
 export async function fetchInvoiceById(id: string) {
+  if (!id) {
+    throw new Error('Invoice ID is required to fetch invoice.');
+  }
+
   try {
     const sql = getSql();
     const data = await sql<InvoiceForm[]>`
@@ -158,13 +162,15 @@ export async function fetchInvoiceById(id: string) {
       WHERE invoices.id = ${id};
     `;
 
-    const invoice = data.map((invoice) => ({
-      ...invoice,
-      // Convert amount from cents to dollars
-      amount: invoice.amount / 100,
-    }));
+    if (!data || data.length === 0) {
+      return null;
+    }
 
-    return invoice[0];
+    const invoice = data[0];
+    return {
+      ...invoice,
+      amount: invoice.amount / 100,
+    };
   } catch (error) {
     console.error('Database Error:', error);
     throw new Error('Failed to fetch invoice.');
